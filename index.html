@@ -13,23 +13,78 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         // Initialize the map
-        var map = L.map('map').setView([0, 0], 2);
-
-        // Add OpenStreetMap title layer
+        var map = L.map('map').setView([6.5244, 3.3792], 10); 
+    
+        // Add OpenStreetMap tile layer
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
-        
+    
+        // Check if the browser supports Geolocation
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                // Get user's latitude and longitude
+                var lat = position.coords.latitude;
+                var lng = position.coords.longitude;
+    
+                // Fetch geospatial data from the Flask server
+                $.get(`http://127.0.0.1:5000/places?lat=${lat}&lng=${lng}`, function(data) {
+                    if (data.length === 0) {
+                        alert("No places found.");
+                        return;
+                    }
+    
+                    data.forEach(function(place) {
+                        if (place.location && place.location.coordinates) {
+                            var coords = place.location.coordinates;
+                            var lat = coords[1], lng = coords[0];
+                            var marker = L.marker([lat, lng]).addTo(map);
+                            marker.bindPopup(place.name);
+                        } else {
+                            console.error("Invalid location data for:", place);
+                        }
+                    });
+                }).fail(function(jqXHR, textStatus, errorThrown) {
+                    alert("Error retrieving data from the server: " + textStatus);
+                    console.error("Error details:", errorThrown);
+                });
+            }, function() {
+                alert("Geolocation is not supported by this browser.");
+            });
+        } else {
+            alert("Geolocation is not supported by this browser.");
+        }
+    </script>
+    <!-- <script>
+        // Initialize the map centered on Lagos
+        var map = L.map('map').setView([6.5244, 3.3792], 10); 
+
+        // Add OpenStreetMap tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
 
         // Fetch geospatial data from the Flask server
-        $.get('http://localhost:5000/places', function(data){
-            data.forEach(function(place){
-                var coords = place.location.coordinates;
-                var lat = coords[1], lng = coords[0];
-                var marker = L.marker([lat, lng]).addTo(map);
-                marker.bindPopup(place.name);
-            })
-        })
-    </script>
+        $.get('http://127.0.0.1:5000/places', function(data) {
+            if (data.length === 0) {
+                alert("No places found.");
+                return;
+            }
+
+            data.forEach(function(place) {
+                if (place.location && place.location.coordinates) {
+                    var coords = place.location.coordinates;
+                    var lat = coords[1], lng = coords[0];
+                    var marker = L.marker([lat, lng]).addTo(map);
+                    marker.bindPopup(place.name);
+                } else {
+                    console.error("Invalid location data for:", place);
+                }
+            });
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+            alert("Error retrieving data from the server: " + textStatus);
+            console.error("Error details:", errorThrown);
+        });
+    </script> -->
 </body>
 </html>

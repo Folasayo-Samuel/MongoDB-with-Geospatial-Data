@@ -3,7 +3,7 @@ from pymongo import MongoClient
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, supports_credentials=True, resources={r"/*": {"origins": "*"}})
 
 client = MongoClient("mongodb://localhost:27017/")
 db = client["geo_database"]
@@ -15,6 +15,17 @@ def get_nearby_places():
     # Get user's location from query parameters
     latitude = float(request.args.get('lat'))
     longitude = float(request.args.get('lng'))
+    
+     # Check if latitude and longitude are provided
+    if latitude is None or longitude is None:
+        return jsonify({"error": "Latitude and Longitude must be provided."}), 400
+
+    # Convert to float
+    try:
+        latitude = float(latitude)
+        longitude = float(longitude)
+    except ValueError:
+        return jsonify({"error": "Latitude and Longitude must be valid numbers."}), 400
 
     # Geospatial query to find places near the given coordinates
     places = collection.find({
